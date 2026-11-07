@@ -46,6 +46,121 @@ jobs:
           echo "Android-Projekt gefunden: $PROJECT_DIR"
           echo "PROJ=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: AndroidX aktivieren
+        working-directory: ${{ env.PROJ }}
+        shell: bash
+        run: |
+          if ! grep -q '^android.useAndroidX=true        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v4
+
+      - name: Benötigte Android-SDK-Version installieren
+        run: sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Gradle 8.7 einrichten
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.7'
+          cache-disabled: true
+
+      - name: APK bauen
+        working-directory: ${{ env.PROJ }}
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/gradle-build.log"
+
+      - name: Prüfen, ob die APK erstellt wurde
+        shell: bash
+        run: |
+          APK="$PROJ/app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK" ]; then
+            echo "FEHLER: app-debug.apk wurde nicht gefunden."
+            find "$PROJ" -type f -name '*.apk' -print || true
+            exit 1
+          fi
+          echo "APK erfolgreich erstellt: $APK"
+
+      - name: APK als Artifact bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoA-Bot-APK
+          path: ${{ env.PROJ }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Build-Log bei Fehler hochladen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoA-Build-Logs
+          path: |
+            gradle-build.log
+            ${{ env.PROJ }}/app/build/reports/
+          if-no-files-found: warn
+
+ gradle.properties; then
+            echo 'android.useAndroidX=true' >> gradle.properties
+          fi
+          if ! grep -q '^android.enableJetifier=true        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v4
+
+      - name: Benötigte Android-SDK-Version installieren
+        run: sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Gradle 8.7 einrichten
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.7'
+          cache-disabled: true
+
+      - name: APK bauen
+        working-directory: ${{ env.PROJ }}
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee "$GITHUB_WORKSPACE/gradle-build.log"
+
+      - name: Prüfen, ob die APK erstellt wurde
+        shell: bash
+        run: |
+          APK="$PROJ/app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK" ]; then
+            echo "FEHLER: app-debug.apk wurde nicht gefunden."
+            find "$PROJ" -type f -name '*.apk' -print || true
+            exit 1
+          fi
+          echo "APK erfolgreich erstellt: $APK"
+
+      - name: APK als Artifact bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoA-Bot-APK
+          path: ${{ env.PROJ }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Build-Log bei Fehler hochladen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoA-Build-Logs
+          path: |
+            gradle-build.log
+            ${{ env.PROJ }}/app/build/reports/
+          if-no-files-found: warn
+
+ gradle.properties; then
+            echo 'android.enableJetifier=true' >> gradle.properties
+          fi
+
       - name: Java 17 einrichten
         uses: actions/setup-java@v6
         with:
