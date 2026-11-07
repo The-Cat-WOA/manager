@@ -1,0 +1,38 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Projekt-ZIP entpacken (falls hochgeladen)
+        run: |
+          if [ -f WoA_App.zip ]; then mkdir -p proj && unzip -o WoA_App.zip -d proj; fi
+          D=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -1 | xargs dirname)
+          echo "Projektordner: $D"
+          echo "PROJ=$D" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+
+      - name: APK bauen
+        working-directory: ${{ env.PROJ }}
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WoA-Bot-APK
+          path: "**/app-debug.apk"
